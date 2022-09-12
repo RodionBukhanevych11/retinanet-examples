@@ -29,6 +29,8 @@ setup(
         'pycocotools @ git+https://github.com/nvidia/cocoapi.git#subdirectory=PythonAPI',
         'pillow',
         'requests',
+        'einops',
+        'timm'
     ],
     entry_points = {'console_scripts': ['odtk=odtk.main:main']}
 )
