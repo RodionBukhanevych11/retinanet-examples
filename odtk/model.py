@@ -9,7 +9,7 @@ from . import backbones as backbones_mod
 from ._C import Engine
 from .box import generate_anchors, snap_to_anchors, decode, nms
 from .box import generate_anchors_rotated, snap_to_anchors_rotated, nms_rotated
-from .loss import FocalLoss, SmoothL1Loss
+from .loss import FocalLoss, SmoothL1Loss, DistillationLoss
 
 
 class Model(nn.Module):
@@ -17,7 +17,7 @@ class Model(nn.Module):
 
     def __init__(
         self, 
-        backbones='ResNet50FPN', 
+        backbones='nextvit_small', 
         classes=80, 
         ratios=[1.0, 2.0, 0.5], 
         scales=[4 * 2 ** (i / 3) for i in range(3)],
@@ -33,8 +33,8 @@ class Model(nn.Module):
 
         self.backbones = nn.ModuleDict({b: getattr(backbones_mod, b)() for b in backbones})
         self.name = 'RetinaNet'
-        self.unused_modules = []
-        for b in backbones: self.unused_modules.extend(getattr(self.backbones, b).features.unused_modules)
+        #self.unused_modules = []
+        #for b in backbones: self.unused_modules.extend(getattr(self.backbones, b).features.unused_modules)
         self.exporting = False
         self.rotated_bbox = rotated_bbox
         self.anchor_ious = anchor_ious
@@ -67,8 +67,9 @@ class Model(nn.Module):
         self.box_head = make_head(4 * self.num_anchors) if not self.rotated_bbox \
                         else make_head(6 * self.num_anchors)  # theta -> cos(theta), sin(theta)
 
-        self.cls_criterion = FocalLoss()
+        self.cls_criterion = DistillationLoss(FocalLoss, None, 'none', 0, 0)
         self.box_criterion = SmoothL1Loss(beta=0.11)
+
 
     def __repr__(self):
         return '\n'.join([
@@ -210,9 +211,12 @@ class Model(nn.Module):
         return cls_loss, box_loss
 
     def freeze_unused_params(self):
+        ...
+        '''
         for n, p in self.named_parameters():
             if any(i in n for i in self.unused_modules):
                 p.requires_grad = False
+        '''
 
     def save(self, state):
         checkpoint = {

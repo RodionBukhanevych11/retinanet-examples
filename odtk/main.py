@@ -28,13 +28,13 @@ def parse(args):
                               required=True)
     parser_train.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
     parser_train.add_argument('--backbone', action='store', type=str, nargs='+', help='backbone model (or list of)',
-                              default=['ResNet50FPN'])
-    parser_train.add_argument('--classes', metavar='num', type=int, help='number of classes', default=80)
-    parser_train.add_argument('--batch', metavar='size', type=int, help='batch size', default=2 * devcount)
-    parser_train.add_argument('--resize', metavar='scale', type=int, help='resize to given size', default=800)
-    parser_train.add_argument('--max-size', metavar='max', type=int, help='maximum resizing size', default=1333)
+                              default=['nextvit_small'])
+    parser_train.add_argument('--classes', metavar='num', type=int, help='number of classes', default=3)
+    parser_train.add_argument('--batch', metavar='size', type=int, help='batch size', default=2)
+    parser_train.add_argument('--resize', metavar='scale', type=int, help='resize to given size', default=736)
+    parser_train.add_argument('--max-size', metavar='max', type=int, help='maximum resizing size', default=736)
     parser_train.add_argument('--jitter', metavar='min max', type=int, nargs=2, help='jitter size within range',
-                              default=[640, 1024])
+                              default=[480, 640])
     parser_train.add_argument('--iters', metavar='number', type=int, help='number of iterations to train for',
                               default=90000)
     parser_train.add_argument('--milestones', action='store', type=int, nargs='*',
@@ -42,7 +42,7 @@ def parse(args):
     parser_train.add_argument('--schedule', metavar='scale', type=float,
                               help='scale schedule (affecting iters and milestones)', default=1)
     parser_train.add_argument('--full-precision', help='train in full precision', action='store_true')
-    parser_train.add_argument('--lr', metavar='value', help='learning rate', type=float, default=0.01)
+    parser_train.add_argument('--lr', metavar='value', help='learning rate', type=float, default=0.0001)
     parser_train.add_argument('--warmup', metavar='iterations', help='numer of warmup iterations', type=int,
                               default=1000)
     parser_train.add_argument('--gamma', metavar='value', type=float,
@@ -86,8 +86,8 @@ def parse(args):
     parser_infer.add_argument('--output', metavar='file', type=str, nargs='+',
                               help='save detections to specified JSON file(s)', default=['detections.json'])
     parser_infer.add_argument('--batch', metavar='size', type=int, help='batch size', default=2 * devcount)
-    parser_infer.add_argument('--resize', metavar='scale', type=int, help='resize to given size', default=800)
-    parser_infer.add_argument('--max-size', metavar='max', type=int, help='maximum resizing size', default=1333)
+    parser_infer.add_argument('--resize', metavar='scale', type=int, help='resize to given size', default=736)
+    parser_infer.add_argument('--max-size', metavar='max', type=int, help='maximum resizing size', default=736)
     parser_infer.add_argument('--with-apex', help='use NVIDIA APEX AMP and DDP', action='store_true')
     parser_infer.add_argument('--with-dali', help='use dali for data loading', action='store_true')
     parser_infer.add_argument('--full-precision', help='inference in full precision', action='store_true')
@@ -99,7 +99,7 @@ def parse(args):
     parser_export.add_argument('export', type=str, help='path to exported output')
     parser_export.add_argument('--size', metavar='height width', type=int, nargs='+',
                                help='input size (square) or sizes (h w) to use when generating TensorRT engine',
-                               default=[1280])
+                               default=[736])
     parser_export.add_argument('--full-precision', help='export in full instead of half precision', action='store_true')
     parser_export.add_argument('--int8', help='calibrate model and export in int8 precision', action='store_true')
     parser_export.add_argument('--calibration-batches', metavar='size', type=int,
