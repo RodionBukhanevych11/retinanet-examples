@@ -91,15 +91,11 @@ def train(model, state, path, annotations, val_path, val_annotations, resize, ma
     scaler = GradScaler(enabled=mixed_precision)
     profiler = Profiler(['train', 'fw', 'bw'])
     iteration = state.get('iteration', 0)
-    while iteration < iterations:
+    for iteration in range(iterations):
         cls_losses, box_losses = [], []
-        for i, (data, target) in enumerate(data_iterator):
-            if iteration>=iterations:
-                break
-
+        for i, (data, target, ids, ratio) in enumerate(data_iterator):
             # Forward pass
             profiler.start('fw')
-
             optimizer.zero_grad()
             if with_apex:
                 cls_loss, box_loss = model([data.contiguous(memory_format=torch.channels_last), target])
@@ -142,7 +138,7 @@ def train(model, state, path, annotations, val_path, val_annotations, resize, ma
 
             iteration += 1
             profiler.bump('train')
-            if is_master and (profiler.totals['train'] > 60 or iteration == iterations):
+            if is_master:
                 focal_loss = torch.stack(list(cls_losses)).mean().item()
                 box_loss = torch.stack(list(box_losses)).mean().item()
                 learning_rate = optimizer.param_groups[0]['lr']
@@ -182,7 +178,7 @@ def train(model, state, path, annotations, val_path, val_annotations, resize, ma
                 profiler.reset()
                 del cls_losses[:], box_losses[:]
 
-            if val_annotations and (iteration == iterations or iteration % val_iterations == 0):
+        if val_annotations:
                 stats = infer(model, val_path, None, resize, max_size, batch_size, annotations=val_annotations,
                             mixed_precision=mixed_precision, is_master=is_master, world=world, use_dali=use_dali,
                             with_apex=with_apex, is_validation=True, verbose=False, rotated_bbox=rotated_bbox)
@@ -213,8 +209,6 @@ def train(model, state, path, annotations, val_path, val_annotations, resize, ma
                     writer.add_scalar(
                         'Validation_Recall/mAR (large)', stats[11], iteration)
 
-            if (iteration==iterations and not rotated_bbox) or (iteration>iterations and rotated_bbox):
-                break
 
     if is_master and logdir is not None:
         writer.close()

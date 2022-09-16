@@ -22,12 +22,14 @@ class ResNet(vrn.ResNet):
             self.load_state_dict(model_zoo.load_url(self.url))
 
     def forward(self, x):
+        #print('input 1 resnet = ',x.shape)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-
+        #print("RESNET pre loop",x.shape)
         outputs = []
+        #print('input 2 resnet = ',x.shape)
         for i, layer in enumerate([self.layer1, self.layer2, self.layer3, self.layer4]):
             level = i + 2
             if level > max(self.outputs):

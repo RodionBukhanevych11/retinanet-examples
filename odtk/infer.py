@@ -71,7 +71,7 @@ def infer(model, path, detections_file, resize, max_size, batch_size, mixed_prec
     results = []
     profiler = Profiler(['infer', 'fw'])
     with torch.no_grad():
-        for i, (data, ids, ratios) in enumerate(data_iterator):
+        for i, (data, target, ids, ratio) in enumerate(data_iterator):
             # Forward pass
             if backend=='pytorch': data = data.contiguous(memory_format=torch.channels_last)
             profiler.start('fw')
@@ -102,6 +102,8 @@ def infer(model, path, detections_file, resize, max_size, batch_size, mixed_prec
             results[r] = torch.cat(all_result, dim=0)
 
     if is_master:
+        
+        print("MASTER")
         # Copy buffers back to host
         results = [r.cpu() for r in results]
 

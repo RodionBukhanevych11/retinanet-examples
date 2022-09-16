@@ -287,16 +287,15 @@ class NextViT(nn.Module):
         self.stride = 128 
         self.with_extra_norm = with_extra_norm
         self.norm_eval = norm_eval
-        self.stage_out_channels = [[96] * (depths[0]),
-                                   [192] * (depths[1] - 1) + [256],
-                                   [384, 384, 384, 384, 512] * (depths[2] // 5),
-                                   [768] * (depths[3] - 1) + [1024]]
-
+        self.stage_out_channels = [
+                                   [192] * (depths[0] - 1) + [256],
+                                   [384, 384, 384, 384, 512] * (depths[1] // 5),
+                                   [768] * (depths[2] - 1) + [1024]]
         # Next Hybrid Strategy
-        self.stage_block_types = [[NCB] * depths[0],
-                                  [NCB] * (depths[1] - 1) + [NTB],
-                                  [NCB, NCB, NCB, NCB, NTB] * (depths[2] // 5),
-                                  [NCB] * (depths[3] - 1) + [NTB]]
+        self.stage_block_types = [
+                                  [NCB] * (depths[0] - 1) + [NTB],
+                                  [NCB, NCB, NCB, NCB, NTB] * (depths[1] // 5),
+                                  [NCB] * (depths[2] - 1) + [NTB]]
 
         self.stem = nn.Sequential(
             ConvBNReLU(3, stem_chs[0], kernel_size=3, stride=2),
@@ -340,9 +339,9 @@ class NextViT(nn.Module):
                     self.stage_out_channels[stage_id][-1], eps=NORM_EPS))
             self.extra_norm_list = nn.Sequential(*self.extra_norm_list)
 
-        # self.norm = nn.BatchNorm2d(output_channel, eps=NORM_EPS)
+        self.norm = nn.BatchNorm2d(output_channel, eps=NORM_EPS)
         #
-        # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # self.proj_head = nn.Sequential(
         #     nn.Linear(output_channel, num_classes),
         # )
@@ -422,17 +421,3 @@ class NextViT(nn.Module):
                 stage_id += 1
         return outputs
 
-
-@register
-def nextvit_small():
-    return NextViT(stem_chs=[64, 32, 64], depths=[3, 4, 10, 3], path_dropout=0.1, resume=False)
-
-
-@register
-def nextvit_base():
-    return NextViT(stem_chs=[64, 32, 64], depths=[3, 4, 20, 3], path_dropout=0.2, resume=False)
-
-
-@register
-def nextvit_large():
-    return NextViT(stem_chs=[64, 32, 64], depths=[3, 4, 30, 3], path_dropout=0.2, resume=False)

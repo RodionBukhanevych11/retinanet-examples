@@ -4,6 +4,7 @@ from torchvision.models import resnet as vrn
 from torchvision.models import mobilenet as vmn
 
 from .resnet import ResNet
+from .vit import NextViT
 from .mobilenet import MobileNet
 from .utils import register
 
@@ -22,6 +23,8 @@ class FPN(nn.Module):
             channels = [128, 256, 512] if is_light else [512, 1024, 2048]
         elif isinstance(features, MobileNet):
             channels = [32, 96, 320]
+        elif isinstance(features, NextViT):
+            channels = [256,512,1024]
 
         self.lateral3 = nn.Conv2d(channels[0], 256, 1)
         self.lateral4 = nn.Conv2d(channels[1], 256, 1)
@@ -60,6 +63,7 @@ class FPN(nn.Module):
 
         return [p3, p4, p5, p6, p7]
 
+
 @register
 def ResNet18FPN():
     return FPN(ResNet(layers=[2, 2, 2, 2], bottleneck=vrn.BasicBlock, outputs=[3, 4, 5], url=vrn.model_urls['resnet18']))
@@ -91,3 +95,15 @@ def ResNeXt101_32x8dFPN():
 @register
 def MobileNetV2FPN():
     return FPN(MobileNet(outputs=[6, 13, 17], url=vmn.model_urls['mobilenet_v2']))
+
+@register
+def ViTsmallFPN():
+    return FPN(NextViT(stem_chs=[64, 32, 64], depths=[4, 10, 3], path_dropout=0.2, resume=False))
+
+@register
+def ViTbaseFPN():
+    return FPN(NextViT(stem_chs=[64, 32, 64], depths=[4, 20, 3], path_dropout=0.2, resume=False))
+
+@register
+def ViTlargeFPN():
+    return FPN(NextViT(stem_chs=[64, 32, 64], depths=[4, 30, 3], path_dropout=0.2, resume=False))

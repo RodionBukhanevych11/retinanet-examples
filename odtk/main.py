@@ -28,7 +28,7 @@ def parse(args):
                               required=True)
     parser_train.add_argument('--images', metavar='path', type=str, help='path to images', default='.')
     parser_train.add_argument('--backbone', action='store', type=str, nargs='+', help='backbone model (or list of)',
-                              default=['nextvit_small'])
+                              default=['ViTsmallFPN'])
     parser_train.add_argument('--classes', metavar='num', type=int, help='number of classes', default=3)
     parser_train.add_argument('--batch', metavar='size', type=int, help='batch size', default=2)
     parser_train.add_argument('--resize', metavar='scale', type=int, help='resize to given size', default=736)
@@ -36,7 +36,7 @@ def parse(args):
     parser_train.add_argument('--jitter', metavar='min max', type=int, nargs=2, help='jitter size within range',
                               default=[480, 640])
     parser_train.add_argument('--iters', metavar='number', type=int, help='number of iterations to train for',
-                              default=90000)
+                              default=200)
     parser_train.add_argument('--milestones', action='store', type=int, nargs='*',
                               help='list of iteration indices where learning rate decays', default=[60000, 80000])
     parser_train.add_argument('--schedule', metavar='scale', type=float,
@@ -109,9 +109,9 @@ def parse(args):
     parser_export.add_argument('--calibration-table', metavar='path', type=str,
                                help='path of existing calibration table to load from, or name of new calibration table',
                                default="")
-    parser_export.add_argument('--verbose', help='enable verbose logging', action='store_true')
+    parser_export.add_argument('--verbose', help='enable verbose logging', default = False, action='store_true')
     parser_export.add_argument('--rotated-bbox', help='inference using a rotated bounding box model',
-                               action='store_true')
+                               action='store_true', default=False)
     parser_export.add_argument('--dynamic-batch-opts', help='Profile batch sizes for tensorrt engine export (min, opt, max)',
                                metavar='value value value', type=int, nargs=3, default=[1,8,16])
 

@@ -17,7 +17,7 @@ class Model(nn.Module):
 
     def __init__(
         self, 
-        backbones='nextvit_small', 
+        backbones='ViTsmallFPN', 
         classes=80, 
         ratios=[1.0, 2.0, 0.5], 
         scales=[4 * 2 ** (i / 3) for i in range(3)],
@@ -33,8 +33,8 @@ class Model(nn.Module):
 
         self.backbones = nn.ModuleDict({b: getattr(backbones_mod, b)() for b in backbones})
         self.name = 'RetinaNet'
-        #self.unused_modules = []
-        #for b in backbones: self.unused_modules.extend(getattr(self.backbones, b).features.unused_modules)
+        self.unused_modules = []
+        for b in backbones: self.unused_modules.extend(getattr(self.backbones, b).features.unused_modules)
         self.exporting = False
         self.rotated_bbox = rotated_bbox
         self.anchor_ious = anchor_ious
@@ -60,14 +60,14 @@ class Model(nn.Module):
                 layers += [nn.Conv2d(256, 256, 3, padding=1), nn.ReLU()]
             layers += [nn.Conv2d(256, out_size, 3, padding=1)]
             return nn.Sequential(*layers)
-
+        
         self.num_anchors = len(self.ratios) * len(self.scales)
         self.num_anchors = self.num_anchors if not self.rotated_bbox else (self.num_anchors * len(self.angles))
         self.cls_head = make_head(classes * self.num_anchors)
         self.box_head = make_head(4 * self.num_anchors) if not self.rotated_bbox \
                         else make_head(6 * self.num_anchors)  # theta -> cos(theta), sin(theta)
 
-        self.cls_criterion = DistillationLoss(FocalLoss, None, 'none', 0, 0)
+        self.cls_criterion = FocalLoss()
         self.box_criterion = SmoothL1Loss(beta=0.11)
 
 
@@ -125,11 +125,10 @@ class Model(nn.Module):
 
     def forward(self, x, rotated_bbox=None):
         if self.training: x, targets = x
-
-        # Backbones forward pass
         features = []
-        for _, backbone in self.backbones.items():
-            features.extend(backbone(x))
+        for item_i, backbone in self.backbones.items():
+            feature = backbone(x)
+            features.extend(feature)
 
         # Heads forward pass
         cls_heads = [self.cls_head(t) for t in features]

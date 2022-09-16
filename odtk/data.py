@@ -59,7 +59,7 @@ class CocoDataset(data.dataset.Dataset):
             ratio = self.max_size / max(im.size)
         im = im.resize((int(ratio * d) for d in im.size), Image.BILINEAR)
 
-        if self.training:
+        if True:
             # Get annotations
             boxes, categories = self._get_target(id)
             boxes *= ratio
@@ -122,10 +122,7 @@ class CocoDataset(data.dataset.Dataset):
         pw, ph = ((self.stride - d % self.stride) % self.stride for d in im.size)
         data = F.pad(data, (0, pw, 0, ph))
 
-        if self.training:
-            return data, target
-
-        return data, id, ratio
+        return data, target, id, ratio
 
     def _get_target(self, id):
         'Get annotations for sample'
@@ -154,13 +151,10 @@ class CocoDataset(data.dataset.Dataset):
     def collate_fn(self, batch):
         'Create batch from multiple samples'
 
-        if self.training:
-            data, targets = zip(*batch)
-            max_det = max([t.size()[0] for t in targets])
-            targets = [torch.cat([t, torch.ones([max_det - t.size()[0], 5]) * -1]) for t in targets]
-            targets = torch.stack(targets, 0)
-        else:
-            data, indices, ratios = zip(*batch)
+        data, targets, indices, ratios = zip(*batch)
+        max_det = max([t.size()[0] for t in targets])
+        targets = [torch.cat([t, torch.ones([max_det - t.size()[0], 5]) * -1]) for t in targets]
+        targets = torch.stack(targets, 0)
 
         # Pad data to match max batch dimensions
         sizes = [d.size()[-2:] for d in data]
@@ -173,12 +167,10 @@ class CocoDataset(data.dataset.Dataset):
                 F.pad(datum, (0, ph, 0, pw)) if max(ph, pw) > 0 else datum)
 
         data = torch.stack(data_stack)
-
-        if self.training:
-            return data, targets
-
         ratios = torch.FloatTensor(ratios).view(-1, 1, 1)
-        return data, torch.IntTensor(indices), ratios
+
+        return data, targets, torch.IntTensor(indices), ratios
+
 
 
 class DataIterator():
@@ -222,16 +214,10 @@ class DataIterator():
 
             if torch.cuda.is_available():
                 data = data.cuda(non_blocking=True)
-
-            if self.dataset.training:
-                if torch.cuda.is_available():
-                    target = target.cuda(non_blocking=True)
-                yield data, target
-            else:
-                if torch.cuda.is_available():
-                    ids = ids.cuda(non_blocking=True)
-                    ratio = ratio.cuda(non_blocking=True)
-                yield data, ids, ratio
+                target = target.cuda(non_blocking=True)
+                ids = ids.cuda(non_blocking=True)
+                ratio = ratio.cuda(non_blocking=True)
+            yield data, target, ids, ratio
 
 
 class RotatedCocoDataset(data.dataset.Dataset):
@@ -284,7 +270,7 @@ class RotatedCocoDataset(data.dataset.Dataset):
             ratio = self.max_size / max(im.size)
         im = im.resize((int(ratio * d) for d in im.size), Image.BILINEAR)
 
-        if self.training:
+        if True:
             # Get annotations
             boxes, categories = self._get_target(id)
             # boxes *= ratio
@@ -367,10 +353,8 @@ class RotatedCocoDataset(data.dataset.Dataset):
         pw, ph = ((self.stride - d % self.stride) % self.stride for d in im.size)
         data = F.pad(data, (0, pw, 0, ph))
 
-        if self.training:
-            return data, target
+        return data, target, id, ratio
 
-        return data, id, ratio
 
     def _get_target(self, id):
         'Get annotations for sample'
@@ -403,13 +387,10 @@ class RotatedCocoDataset(data.dataset.Dataset):
     def collate_fn(self, batch):
         'Create batch from multiple samples'
 
-        if self.training:
-            data, targets = zip(*batch)
-            max_det = max([t.size()[0] for t in targets])
-            targets = [torch.cat([t, torch.ones([max_det - t.size()[0], 6]) * -1]) for t in targets]
-            targets = torch.stack(targets, 0)
-        else:
-            data, indices, ratios = zip(*batch)
+        data, targets, indices, ratios = zip(*batch)
+        max_det = max([t.size()[0] for t in targets])
+        targets = [torch.cat([t, torch.ones([max_det - t.size()[0], 6]) * -1]) for t in targets]
+        targets = torch.stack(targets, 0)
 
         # Pad data to match max batch dimensions
         sizes = [d.size()[-2:] for d in data]
@@ -422,12 +403,9 @@ class RotatedCocoDataset(data.dataset.Dataset):
                 F.pad(datum, (0, ph, 0, pw)) if max(ph, pw) > 0 else datum)
 
         data = torch.stack(data_stack)
-
-        if self.training:
-            return data, targets
-
         ratios = torch.FloatTensor(ratios).view(-1, 1, 1)
-        return data, torch.IntTensor(indices), ratios
+
+        return data, targets, torch.IntTensor(indices), ratios
 
 
 class RotatedDataIterator():
@@ -472,13 +450,7 @@ class RotatedDataIterator():
 
             if torch.cuda.is_available():
                 data = data.cuda(non_blocking=True)
-
-            if self.dataset.training:
-                if torch.cuda.is_available():
-                    target = target.cuda(non_blocking=True)
-                yield data, target
-            else:
-                if torch.cuda.is_available():
-                    ids = ids.cuda(non_blocking=True)
-                    ratio = ratio.cuda(non_blocking=True)
-                yield data, ids, ratio
+                target = target.cuda(non_blocking=True)
+                ids = ids.cuda(non_blocking=True)
+                ratio = ratio.cuda(non_blocking=True)
+            yield data, target, ids, ratio
