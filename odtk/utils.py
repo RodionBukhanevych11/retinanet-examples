@@ -13,6 +13,70 @@ import torch
 from torch import nn
 
 
+def bbox_iou_numpy(bb1, bb2):
+    bb1[2], bb1[3] = bb1[0] + bb1[2], bb1[1] + bb1[3]
+    bb2[2], bb2[3] = bb2[0] + bb2[2], bb2[1] + bb2[3]
+    print(bb1, bb2)
+    if bb1[0] >= bb1[2] or bb1[1] >= bb1[3] or bb2[0] >= bb2[2] or bb2[1] >= bb2[3]:
+        return 0.0
+
+    x_left = max(bb1[0], bb2[0])
+    y_top = max(bb1[1], bb2[1])
+    x_right = min(bb1[2], bb2[2])
+    y_bottom = min(bb1[3], bb2[3])
+
+    if x_right < x_left or y_bottom < y_top:
+        return 0.0
+
+    intersection_area = (x_right - x_left) * (y_bottom - y_top)
+
+    bb1_area = (bb1[2] - bb1[0]) * (bb1[3] - bb1[1])
+    bb2_area = (bb2[2] - bb2[0]) * (bb2[3] - bb2[1])
+
+    iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
+    assert iou >= 0.0
+    assert iou <= 1.0
+    return iou
+
+
+def get_metrics_per_class(pr_bboxes,pr_labels,targets,metrics,iou_th):
+    for pr_index in range(len(pr_bboxes)):
+        predicted_label = int(pr_labels[pr_index])
+        predicted_box = pr_bboxes[pr_index]
+        if len(targets) == 0:
+            metrics[predicted_label]['fp']+=1
+        else:
+            iou_all = np.array([bbox_iou_numpy(target[:4],predicted_box) for target in targets])
+            if (iou_all >= iou_th).any():
+                matched_targets_index = np.where(iou_all>=iou_th)[0]
+                matched_targets = targets[matched_targets_index][:,-1]
+                for target in matched_targets:
+                    target_label = int(target[-1])
+                    if predicted_label == target_label:
+                        metrics[predicted_label]['tp']+=1
+                    else:
+                        metrics[predicted_label]['fn']+=1
+                        metrics[target_label]['fp']+=1
+            else:
+                metrics[predicted_label]['fn']+=1
+                
+    return metrics
+
+
+def get_metrics(pr_bboxes, pr_labels, targets, metrics, iou_th):
+    pr_bboxes = pr_bboxes.detach().cpu().numpy()
+    pr_labels = pr_labels.detach().cpu().numpy()
+    targets = targets.detach().cpu().numpy()
+    if len(pr_bboxes)==0:
+        for target in temp_targets:
+            target_label = target[-1]
+            if target_label>-1:
+                metrics[label]['fn']+=1
+    else:
+        metrics = get_metrics_per_class(pr_bboxes,pr_labels,targets,metrics,iou_th)
+    return metrics
+
+
 def order_points(pts):
     pts_reorder = []
 

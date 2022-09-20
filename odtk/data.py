@@ -9,7 +9,6 @@ from pycocotools.coco import COCO
 import math
 from torchvision.transforms.functional import adjust_brightness, adjust_contrast, adjust_hue, adjust_saturation
 
-
 class CocoDataset(data.dataset.Dataset):
     'Dataset looping through a set of images'
 
@@ -190,7 +189,7 @@ class DataIterator():
                                    augment_saturation=augment_saturation)
         self.ids = self.dataset.ids
         self.coco = self.dataset.coco
-
+        self.it = 0
         self.sampler = data.distributed.DistributedSampler(self.dataset) if world > 1 else None
         self.dataloader = data.DataLoader(self.dataset, batch_size=batch_size // world,
                                           sampler=self.sampler, collate_fn=self.dataset.collate_fn, num_workers=2,
@@ -207,16 +206,14 @@ class DataIterator():
 
     def __iter__(self):
         for output in self.dataloader:
-            if self.dataset.training:
-                data, target = output
-            else:
-                data, ids, ratio = output
-
-            if torch.cuda.is_available():
-                data = data.cuda(non_blocking=True)
-                target = target.cuda(non_blocking=True)
-                ids = ids.cuda(non_blocking=True)
-                ratio = ratio.cuda(non_blocking=True)
+            if self.it == 20:
+                break
+            data, target, ids, ratio = output
+            data = data.cuda(non_blocking=True)
+            target = target.cuda(non_blocking=True)
+            ids = ids.cuda(non_blocking=True)
+            ratio = ratio.cuda(non_blocking=True)
+            self.it+=1
             yield data, target, ids, ratio
 
 

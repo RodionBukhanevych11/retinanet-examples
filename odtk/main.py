@@ -182,7 +182,7 @@ def worker(rank, args, world, model, state):
                     metrics_url=args.post_metrics, logdir=args.logdir, verbose=(rank == 0),
                     rotate_augment=args.augment_rotate, augment_brightness=args.augment_brightness,
                     augment_contrast=args.augment_contrast, augment_hue=args.augment_hue, augment_saturation=args.augment_saturation,
-                    regularization_l2=args.regularization_l2, rotated_bbox=args.rotated_bbox, absolute_angle=args.absolute_angle)
+                    regularization_l2=args.regularization_l2, rotated_bbox=args.rotated_bbox, absolute_angle=args.absolute_angle, nc = args.classes)
 
     elif args.command == 'infer':
         if model is None:
@@ -192,7 +192,7 @@ def worker(rank, args, world, model, state):
         infer.infer(model, args.images, args.output, args.resize, args.max_size, args.batch,
                     annotations=args.annotations, mixed_precision=not args.full_precision,
                     is_master=(rank == 0), world=world, with_apex=args.with_apex, use_dali=args.with_dali,
-                    verbose=(rank == 0), rotated_bbox=args.rotated_bbox)
+                    verbose=(rank == 0), rotated_bbox=args.rotated_bbox, nc = classes)
 
     elif args.command == 'export':
         onnx_only = args.export.split('.')[-1] == 'onnx'

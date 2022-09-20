@@ -18,7 +18,7 @@ class Model(nn.Module):
     def __init__(
         self, 
         backbones='ViTsmallFPN', 
-        classes=80, 
+        classes=3, 
         ratios=[1.0, 2.0, 0.5], 
         scales=[4 * 2 ** (i / 3) for i in range(3)],
         angles=None, 
@@ -46,10 +46,10 @@ class Model(nn.Module):
         self.anchors = {}
         self.classes = classes
 
-        self.threshold = config.get('threshold', 0.05)
-        self.top_n = config.get('top_n', 1000)
-        self.nms = config.get('nms', 0.5)
-        self.detections = config.get('detections', 100)
+        self.threshold =  0.05
+        self.top_n = 50
+        self.nms = 0.45
+        self.detections = 200
 
         self.stride = max([b.stride for _, b in self.backbones.items()])
 
