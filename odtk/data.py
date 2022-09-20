@@ -206,8 +206,8 @@ class DataIterator():
 
     def __iter__(self):
         for output in self.dataloader:
-            if self.it == 20:
-                break
+            #if self.it == 20:
+                #break
             data, target, ids, ratio = output
             data = data.cuda(non_blocking=True)
             target = target.cuda(non_blocking=True)
